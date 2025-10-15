@@ -61,10 +61,10 @@ export interface RequestPayload {
   }[];
   stream?: boolean;
   model: string;
-  temperature: number;
+  temperature?: number;
   presence_penalty: number;
   frequency_penalty: number;
-  top_p: number;
+  top_p?: number;
   max_tokens?: number;
   max_completion_tokens?: number;
 }
@@ -231,13 +231,21 @@ export class ChatGPTApi implements LLMApi {
         messages,
         stream: options.config.stream,
         model: modelConfig.model,
-        temperature: (!isO1OrO3 && !isGpt5) ? modelConfig.temperature : 1,
         presence_penalty: !isO1OrO3 ? modelConfig.presence_penalty : 0,
         frequency_penalty: !isO1OrO3 ? modelConfig.frequency_penalty : 0,
-        top_p: !isO1OrO3 ? modelConfig.top_p : 1,
         // max_tokens: Math.max(modelConfig.max_tokens, 1024),
         // Please do not ask me why not send max_tokens, no reason, this param is just shit, I dont want to explain anymore.
       };
+
+      // Only add temperature if enabled and not O1/O3/GPT5
+      if (modelConfig.sendTemperature && !isO1OrO3 && !isGpt5) {
+        requestPayload.temperature = modelConfig.temperature;
+      }
+
+      // Only add top_p if enabled and not O1/O3
+      if (modelConfig.sendTopP && !isO1OrO3) {
+        requestPayload.top_p = modelConfig.top_p;
+      }
 
       if (isGpt5) {
   	// Remove max_tokens if present
